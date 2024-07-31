@@ -23,3 +23,70 @@ color = {
     'END'       : '\033[0m'
 }
 ```
+
+
+ ## Neural network workshop
+```
+from tensorflow import keras
+from IPython.display import HTML, Image
+from google.colab.output import eval_js
+from base64 import b64decode
+from PIL import Image
+import PIL
+import numpy as np
+
+canvas_html = """
+<canvas width=%d height=%d></canvas>
+<button>Finish</button>
+<script>
+var canvas = document.querySelector('canvas')
+var ctx = canvas.getContext('2d')
+ctx.lineWidth = %d
+ctx.fillStyle = "#FFFFFF";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+var button = document.querySelector('button')
+var mouse = {x: 0, y: 0}
+canvas.addEventListener('mousemove', function(e) {
+  mouse.x = e.pageX - this.offsetLeft
+  mouse.y = e.pageY - this.offsetTop
+})
+canvas.onmousedown = ()=>{
+  ctx.beginPath()
+  ctx.moveTo(mouse.x, mouse.y)
+  canvas.addEventListener('mousemove', onPaint)
+}
+canvas.onmouseup = ()=>{
+  canvas.removeEventListener('mousemove', onPaint)
+}
+var onPaint = ()=>{
+  ctx.lineTo(mouse.x, mouse.y)
+  ctx.stroke()
+}
+var data = new Promise(resolve=>{
+  button.onclick = ()=>{
+    resolve(canvas.toDataURL('image/png'))
+  }
+})
+</script>
+"""
+
+def draw(filename='drawing.png', w=256, h=256, line_width=20):
+  display(HTML(canvas_html % (w, h, line_width)))
+  data = eval_js("data")
+  binary = b64decode(data.split(',')[1])
+  with open(filename, 'wb') as f:
+    f.write(binary)
+  return Image.open(filename)
+
+def draw_and_inference(model):
+  img = draw()
+  img = img.resize((28, 28), resample=Image.NEAREST).convert('L')
+  img = PIL.ImageOps.invert(img)
+  img = keras.utils.img_to_array(img) / 255
+
+  out = model.predict(img.reshape(1, 28, 28))
+  pred = np.argmax(out, axis=-1)
+
+  plt.title(f'Model prediction: {pred}')
+  plt.imshow(img, cmap='Greys')
+```
