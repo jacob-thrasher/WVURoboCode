@@ -82,7 +82,6 @@ def draw_and_inference(model):
   img = draw()
   img = img.resize((28, 28), resample=Image.NEAREST).convert('L')
   img = PIL.ImageOps.invert(img)
-  img = keras.utils.img_to_array(img) / 255
 
   out = model.predict(img.reshape(1, 28, 28))
   pred = np.argmax(out, axis=-1)
